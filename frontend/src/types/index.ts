@@ -42,6 +42,7 @@ export interface Investigation {
 }
 
 export interface CreateInvestigationPayload {
+  objective?: string;
   maxTasks?: number;
   maxRetriesPerTask?: number;
   maxRuntimeSeconds?: number;

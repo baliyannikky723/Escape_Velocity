@@ -52,6 +52,7 @@ export const Dashboard: React.FC = () => {
     // Immediately create and start investigation
     try {
       const inv = await investigationApi.createInvestigation(createdIncident.id, {
+        objective: `Investigate root cause for ${createdIncident.title}`,
         maxTasks: 10,
         maxRetriesPerTask: 2,
         maxRuntimeSeconds: 120,
@@ -65,7 +66,10 @@ export const Dashboard: React.FC = () => {
   const handleStartInvestigation = async (incidentId: string) => {
     setIsStartingId(incidentId);
     try {
+      const incident = incidents.find((inc) => inc.id === incidentId);
+      const title = incident ? incident.title : 'Incident';
       const inv = await investigationApi.createInvestigation(incidentId, {
+        objective: `Investigate root cause and causal chain for ${title}`,
         maxTasks: 10,
         maxRetriesPerTask: 2,
         maxRuntimeSeconds: 120,

@@ -158,15 +158,28 @@ public class InvestigationServiceImpl implements InvestigationService {
         Incident incident = incidentRepository.findById(incidentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Incident", incidentId));
 
+        String objective = (request != null && request.getObjective() != null && !request.getObjective().isBlank())
+                ? request.getObjective().trim()
+                : "Investigate root cause and causal chain for " + incident.getTitle();
+        int maxTasks = (request != null && request.getMaxTasks() != null && request.getMaxTasks() > 0)
+                ? request.getMaxTasks()
+                : 10;
+        int maxRetries = (request != null && request.getMaxRetriesPerTask() != null && request.getMaxRetriesPerTask() >= 0)
+                ? request.getMaxRetriesPerTask()
+                : 3;
+        int maxRuntime = (request != null && request.getMaxRuntimeSeconds() != null && request.getMaxRuntimeSeconds() > 0)
+                ? request.getMaxRuntimeSeconds()
+                : 300;
+
         Instant now = Instant.now();
         Investigation investigation = Investigation.builder()
                 .id(UUID.randomUUID())
                 .incidentId(incident.getId())
                 .status(InvestigationStatus.CREATED)
-                .objective(request.getObjective().trim())
-                .maxTasks(request.getMaxTasks())
-                .maxRetriesPerTask(request.getMaxRetriesPerTask())
-                .maxRuntimeSeconds(request.getMaxRuntimeSeconds())
+                .objective(objective)
+                .maxTasks(maxTasks)
+                .maxRetriesPerTask(maxRetries)
+                .maxRuntimeSeconds(maxRuntime)
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
