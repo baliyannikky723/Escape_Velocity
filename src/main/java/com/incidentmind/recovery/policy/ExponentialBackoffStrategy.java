@@ -11,13 +11,18 @@ public class ExponentialBackoffStrategy implements BackoffStrategy {
     private final RecoveryProperties properties;
     private final Sleeper sleeper;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public ExponentialBackoffStrategy(RecoveryProperties properties) {
         this(properties, Thread::sleep);
     }
 
     public ExponentialBackoffStrategy(RecoveryProperties properties, Sleeper sleeper) {
-        this.properties = properties;
+        this.properties = properties != null ? properties : new RecoveryProperties();
         this.sleeper = sleeper != null ? sleeper : Thread::sleep;
+    }
+
+    public ExponentialBackoffStrategy() {
+        this(new RecoveryProperties(), Thread::sleep);
     }
 
     @Override

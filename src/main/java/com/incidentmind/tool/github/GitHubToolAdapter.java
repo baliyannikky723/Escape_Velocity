@@ -32,14 +32,17 @@ public class GitHubToolAdapter {
     private final GitHubProperties properties;
     private final ObjectMapper objectMapper;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public GitHubToolAdapter(GitHubProperties properties, ObjectMapper objectMapper) {
-        this(buildDefaultRestClient(properties), properties, objectMapper);
+        this(buildDefaultRestClient(properties != null ? properties : new GitHubProperties()),
+             properties != null ? properties : new GitHubProperties(),
+             objectMapper != null ? objectMapper : new ObjectMapper());
     }
 
     public GitHubToolAdapter(RestClient restClient, GitHubProperties properties, ObjectMapper objectMapper) {
-        this.restClient = restClient;
-        this.properties = properties;
-        this.objectMapper = objectMapper;
+        this.restClient = restClient != null ? restClient : buildDefaultRestClient(properties != null ? properties : new GitHubProperties());
+        this.properties = properties != null ? properties : new GitHubProperties();
+        this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
     }
 
     private static RestClient buildDefaultRestClient(GitHubProperties properties) {
