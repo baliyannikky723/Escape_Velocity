@@ -1,0 +1,87 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: incidentmind-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-incidentmind}
+      POSTGRES_USER: ${POSTGRES_USER:-incidentmind}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-incidentmind}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-incidentmind} -d ${POSTGRES_DB:-incidentmind}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  ai-service:
+    build:
+      context: ./ai_service
+      dockerfile: Dockerfile
+    container_name: incidentmind-ai-service
+    restart: unless-stopped
+    ports:
+      - "${AI_SERVICE_PORT:-8000}:8000"
+    environment:
+      AI_SERVICE_HOST: 0.0.0.0
+      AI_SERVICE_PORT: 8000
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-20}
+      LLM_MAX_OUTPUT_TOKENS: ${LLM_MAX_OUTPUT_TOKENS:-2048}
+      LLM_MAX_RETRIES: ${LLM_MAX_RETRIES:-2}
+      MAX_CONSECUTIVE_CRITIC_REJECTIONS: ${MAX_CONSECUTIVE_CRITIC_REJECTIONS:-3}
+      MAX_PLANNING_FAILURES: ${MAX_PLANNING_FAILURES:-2}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/ai/v1/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: incidentmind-backend
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/${POSTGRES_DB:-incidentmind}}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-${POSTGRES_USER:-incidentmind}}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-${POSTGRES_PASSWORD:-incidentmind}}
+      AI_SERVICE_ENABLED: ${AI_SERVICE_ENABLED:-true}
+      AI_SERVICE_URL: ${AI_SERVICE_URL:-http://ai-service:8000}
+      AI_SERVICE_BASE_URL: ${AI_SERVICE_BASE_URL:-http://ai-service:8000}
+      AI_SERVICE_TIMEOUT_SECONDS: ${AI_SERVICE_TIMEOUT_SECONDS:-5}
+      GITHUB_API_BASE_URL: ${GITHUB_API_BASE_URL:-https://api.github.com}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      GITHUB_CONNECT_TIMEOUT_MS: ${GITHUB_CONNECT_TIMEOUT_MS:-2000}
+      GITHUB_READ_TIMEOUT_MS: ${GITHUB_READ_TIMEOUT_MS:-5000}
+      FAILURE_INJECTION_ENABLED: ${FAILURE_INJECTION_ENABLED:-false}
+      INCIDENTMIND_DEMO_DATA_ENABLED: ${INCIDENTMIND_DEMO_DATA_ENABLED:-false}
+      RECOVERY_ENABLED: ${RECOVERY_ENABLED:-true}
+      RECOVERY_MAX_ATTEMPTS: ${RECOVERY_MAX_ATTEMPTS:-3}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/actuator/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+volumes:
+  postgres_data:
+    driver: local

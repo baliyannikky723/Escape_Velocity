@@ -1,0 +1,81 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: incidentmind
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:incidentmind}}
+    username: ${SPRING_DATASOURCE_USERNAME:${POSTGRES_USER:incidentmind}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${POSTGRES_PASSWORD:incidentmind}}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      connection-timeout: 20000
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
+        format_sql: true
+    show-sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  jackson:
+    time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+incidentmind:
+  demo-data:
+    enabled: ${INCIDENTMIND_DEMO_DATA_ENABLED:false}
+  tools:
+    failure-injection:
+      enabled: ${FAILURE_INJECTION_ENABLED:false}
+  recovery:
+    enabled: ${RECOVERY_ENABLED:true}
+    max-attempts: ${RECOVERY_MAX_ATTEMPTS:3}
+    initial-backoff-ms: ${RECOVERY_INITIAL_BACKOFF_MS:200}
+    max-backoff-ms: ${RECOVERY_MAX_BACKOFF_MS:3000}
+    exponential-backoff: true
+
+github:
+  api-base-url: ${GITHUB_API_BASE_URL:https://api.github.com}
+  token: ${GITHUB_TOKEN:}
+  connect-timeout-ms: ${GITHUB_CONNECT_TIMEOUT_MS:2000}
+  read-timeout-ms: ${GITHUB_READ_TIMEOUT_MS:5000}
+
+ai-service:
+  enabled: ${AI_SERVICE_ENABLED:true}
+  base-url: ${AI_SERVICE_URL:${AI_SERVICE_BASE_URL:http://localhost:8000}}
+  timeout-seconds: ${AI_SERVICE_TIMEOUT_SECONDS:5}
+  max-consecutive-critic-rejections: 3
+  max-planning-failures: 2
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{correlationId:-none}] %-5level %logger{36} - %msg%n"
+  level:
+    root: INFO
+    com.incidentmind: DEBUG
