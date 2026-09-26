@@ -762,9 +762,7 @@ public class InvestigationServiceImpl implements InvestigationService {
         Investigation investigation = getInvestigationEntity(investigationId);
 
         String actionStr = request.getAction().trim().toUpperCase();
-        UUID correlationId = CorrelationContext.getCorrelationId() != null 
-                ? UUID.fromString(CorrelationContext.getCorrelationId()) 
-                : UUID.randomUUID();
+        UUID correlationId = CorrelationContext.getCorrelationIdAsUuid();
 
         // Record HUMAN_ACTION_RECEIVED audit event
         Map<String, Object> eventData = new HashMap<>();

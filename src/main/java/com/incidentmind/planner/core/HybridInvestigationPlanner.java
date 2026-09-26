@@ -53,9 +53,7 @@ public class HybridInvestigationPlanner implements InvestigationPlanner {
     @Override
     public InvestigationPlan plan(PlannerContext context) {
         UUID investigationId = context.getInvestigation() != null ? context.getInvestigation().getId() : null;
-        UUID correlationId = CorrelationContext.getCorrelationId() != null 
-                ? UUID.fromString(CorrelationContext.getCorrelationId()) 
-                : (context.getCorrelationId() != null ? context.getCorrelationId() : UUID.randomUUID());
+        UUID correlationId = CorrelationContext.getCorrelationIdAsUuid();
 
         if (!properties.isEnabled()) {
             return deterministicPlanner.plan(context);
